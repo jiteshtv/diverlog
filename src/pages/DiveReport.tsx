@@ -1,8 +1,10 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { Plus, Loader2, ArrowLeft, Printer, Pencil, Trash2, X, Share2 } from 'lucide-react';
+import { Plus, Loader2, ArrowLeft, Printer, Pencil, Trash2, X, Share2, Download } from 'lucide-react';
 import { format, set } from 'date-fns';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 interface DiveEvent {
     id: string;
@@ -162,28 +164,86 @@ export default function DiveReport() {
         }
     };
 
-    const handleShare = () => {
+    const generatePDF = async () => {
+        if (!contentRef.current || !dive) return null;
+
+        try {
+            // Temporarily remove transform for PDF generation
+            const originalTransform = contentRef.current.style.transform;
+            contentRef.current.style.transform = 'none';
+
+            // Capture the A4 content as canvas
+            const canvas = await html2canvas(contentRef.current, {
+                scale: 2,
+                useCORS: true,
+                logging: false,
+                backgroundColor: '#ffffff'
+            });
+
+            // Restore transform
+            contentRef.current.style.transform = originalTransform;
+
+            // Create PDF (A4 size: 210mm x 297mm)
+            const pdf = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: 'a4'
+            });
+
+            const imgData = canvas.toDataURL('image/png');
+            const pdfWidth = 210;
+            const pdfHeight = 297;
+
+            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+
+            return pdf;
+        } catch (error) {
+            console.error('PDF generation failed:', error);
+            alert('Failed to generate PDF. Please try again.');
+            return null;
+        }
+    };
+
+    const handleDownloadPDF = async () => {
+        const pdf = await generatePDF();
+        if (pdf && dive) {
+            const fileName = `Dive_Log_${dive.dive_no}_${format(new Date(dive.date), 'yyyy-MM-dd')}.pdf`;
+            pdf.save(fileName);
+        }
+    };
+
+    const handleShare = async () => {
         if (!dive) return;
 
-        // Calculate max depth before using it
-        const maxDepth = dive?.max_depth || (events.length > 0 ? Math.max(...events.map(e => e.depth)) : 0);
+        const pdf = await generatePDF();
+        if (!pdf) return;
 
-        // Create a detailed text summary of the dive for WhatsApp
-        const shareText = `🤿 *DIVE LOG REPORT*\n\n` +
-            `*Dive #${dive.dive_no}*\n` +
-            `📅 Date: ${format(new Date(dive.date), 'dd MMM yyyy')}\n` +
-            `🏢 Job: ${dive.job?.job_name}\n` +
-            `🏭 Client: ${dive.job?.client_name}\n` +
-            `📍 Location: ${dive.job?.location}\n` +
-            `👤 Diver: ${dive.diver?.full_name} (${dive.diver?.rank})\n` +
-            `👨‍✈️ Supervisor: ${dive.supervisor?.full_name || 'N/A'}\n` +
-            `⏱️ Start: ${dive.start_time?.slice(0, 5)} | End: ${dive.end_time?.slice(0, 5)}\n` +
-            `📊 Max Depth: ${maxDepth}m\n` +
-            `⏳ Bottom Time: ${dive.bottom_time}`;
+        const fileName = `Dive_Log_${dive.dive_no}_${format(new Date(dive.date), 'yyyy-MM-dd')}.pdf`;
 
-        // Open WhatsApp with the share text
-        const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
-        window.open(whatsappUrl, '_blank');
+        // Convert PDF to blob
+        const pdfBlob = pdf.output('blob');
+
+        // Try to use Web Share API with file
+        if (navigator.share && navigator.canShare) {
+            const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
+
+            if (navigator.canShare({ files: [file] })) {
+                try {
+                    await navigator.share({
+                        files: [file],
+                        title: `Dive Log #${dive.dive_no}`,
+                        text: `Dive report for ${dive.job?.job_name} on ${format(new Date(dive.date), 'dd MMM yyyy')}`
+                    });
+                    return;
+                } catch (err) {
+                    console.error('Share failed:', err);
+                }
+            }
+        }
+
+        // Fallback: Download the PDF
+        pdf.save(fileName);
+        alert('PDF downloaded! You can now share it via WhatsApp or email from your device.');
     };
 
     if (loading) return <div className="p-12 flex justify-center"><Loader2 className="animate-spin text-ocean-400" /></div>;
@@ -228,9 +288,15 @@ export default function DiveReport() {
                 <div className="flex gap-2 flex-wrap justify-end">
                     <button
                         onClick={handleShare}
-                        className="px-3 py-2 bg-ocean-800 text-ocean-200 rounded hover:bg-ocean-700 flex items-center text-sm"
+                        className="px-3 py-2 bg-green-700 text-white rounded hover:bg-green-600 flex items-center text-sm"
                     >
-                        <Share2 className="w-4 h-4 mr-2" /> Share
+                        <Share2 className="w-4 h-4 mr-2" /> Share PDF
+                    </button>
+                    <button
+                        onClick={handleDownloadPDF}
+                        className="px-3 py-2 bg-blue-700 text-white rounded hover:bg-blue-600 flex items-center text-sm"
+                    >
+                        <Download className="w-4 h-4 mr-2" /> Download PDF
                     </button>
                     <button
                         onClick={() => setIsEditMode(!isEditMode)}
@@ -239,7 +305,7 @@ export default function DiveReport() {
                         <Pencil className="w-4 h-4 mr-2" /> {isEditMode ? 'Done' : 'Edit'}
                     </button>
                     <button onClick={() => window.print()} className="bg-ocean-600 text-white px-3 py-2 rounded flex items-center hover:bg-ocean-500 text-sm">
-                        <Printer className="w-4 h-4 mr-2" /> Print / PDF
+                        <Printer className="w-4 h-4 mr-2" /> Print
                     </button>
                 </div>
             </div>
