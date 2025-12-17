@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
-import { FileText, Printer, ChevronRight, Anchor, User, Calendar } from 'lucide-react';
+import { FileText, ChevronRight, Anchor, User, Calendar } from 'lucide-react';
 
 interface DiveReport {
     id: string;
@@ -68,13 +68,6 @@ export default function DailyReport() {
                             className="bg-transparent text-white border-none focus:ring-0 p-2 text-sm"
                         />
                     </div>
-                    <button
-                        onClick={() => window.print()}
-                        className="bg-ocean-600 hover:bg-ocean-500 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors print:hidden"
-                    >
-                        <Printer className="w-4 h-4" />
-                        <span>Print Report</span>
-                    </button>
                 </div>
             </div>
 
@@ -133,9 +126,9 @@ export default function DailyReport() {
                                 </div>
                             </div>
 
-                            {/* Show footer only in web view, maybe hide in print to save space or keep it */}
-                            <Link to={`/reports/${dive.id}`} className="block bg-deep-950/30 p-2 text-center text-xs text-slate-600 print:hidden hover:bg-ocean-900/10 cursor-pointer transition-colors">
-                                View Full Log & Events <ChevronRight className="w-3 h-3 inline ml-1" />
+                            {/* Show footer only in web view */}
+                            <Link to={`/reports/${dive.id}`} className="block bg-ocean-900/40 p-3 text-center text-sm font-bold text-ocean-400 print:hidden hover:bg-ocean-800 hover:text-white cursor-pointer transition-colors border-t border-ocean-800/30">
+                                View Full Log & Events <ChevronRight className="w-4 h-4 inline ml-1" />
                             </Link>
                         </div>
                     ))
