@@ -146,8 +146,12 @@ export default function DiveReport() {
     if (loading) return <div className="p-12 flex justify-center"><Loader2 className="animate-spin text-ocean-400" /></div>;
     if (!dive) return <div className="p-12 text-center text-white">Dive not found</div>;
 
+    // Calculate Max Depth from events if not available in dive details
+    const calculatedMaxDepth = dive?.max_depth || (events.length > 0 ? Math.max(...events.map(e => e.depth)) : 0);
+
     return (
-        <div className="max-w-4xl mx-auto bg-white text-black p-8 rounded-xl shadow-2xl min-h-screen">
+        <div className="max-w-5xl mx-auto bg-white text-black p-8 min-h-screen font-sans">
+            {/* Action Bar */}
             <div className="flex justify-between items-start mb-8 print:hidden">
                 <button onClick={() => navigate(-1)} className="flex items-center text-slate-500 hover:text-ocean-600">
                     <ArrowLeft className="w-4 h-4 mr-1" /> Back
@@ -165,32 +169,99 @@ export default function DiveReport() {
                 </div>
             </div>
 
-            {/* Print Header */}
-            <div className="text-center border-b-2 border-black pb-4 mb-6">
-                <h1 className="text-3xl font-bold uppercase tracking-widest">Diving Operations Log</h1>
-                <p className="text-sm text-slate-600">Offshore Division</p>
+            {/* Document Header - Boxed */}
+            <div className="border-2 border-black mb-6">
+                <div className="grid grid-cols-4 divide-x-2 divide-black">
+                    {/* Contractor Logo Placeholder */}
+                    <div className="col-span-1 h-32 flex items-center justify-center bg-gray-50 border-r-black">
+                        <div className="text-center p-4">
+                            <div className="w-full h-20 bg-gray-200 flex items-center justify-center border border-dashed border-gray-400">
+                                <span className="text-xs font-bold text-gray-500 uppercase px-2">Contractor Logo</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Title */}
+                    <div className="col-span-2 flex flex-col items-center justify-center p-4">
+                        <h1 className="text-3xl font-bold uppercase tracking-widest text-center">Diving Operations Log</h1>
+                        <p className="text-sm font-bold uppercase mt-2 tracking-wide text-slate-600">Offshore Division</p>
+                    </div>
+
+                    {/* Client Logo Placeholder */}
+                    <div className="col-span-1 h-32 flex items-center justify-center bg-gray-50">
+                        <div className="text-center p-4">
+                            <div className="w-full h-20 bg-gray-200 flex items-center justify-center border border-dashed border-gray-400">
+                                <span className="text-xs font-bold text-gray-500 uppercase px-2">Client Logo</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            {/* Info Grid */}
-            <div className="grid grid-cols-2 gap-x-8 gap-y-4 mb-8 text-sm">
-                <div className="border-b border-slate-200 pb-2"><span className="font-bold w-32 inline-block">Job:</span> {dive.job?.job_name}</div>
-                <div className="border-b border-slate-200 pb-2"><span className="font-bold w-32 inline-block">Client:</span> {dive.job?.client_name}</div>
-                <div className="border-b border-slate-200 pb-2"><span className="font-bold w-32 inline-block">Location:</span> {dive.job?.location}</div>
-                <div className="border-b border-slate-200 pb-2"><span className="font-bold w-32 inline-block">Date:</span> {format(new Date(dive.date), 'dd MMM yyyy')}</div>
+            {/* Dive Details - Boxed Grid */}
+            <div className="border-2 border-black mb-6 text-sm">
+                <div className="grid grid-cols-2 divide-x-2 divide-black border-b border-black">
+                    <div className="flex p-0">
+                        <div className="w-32 bg-gray-100 p-2 font-bold border-r border-black flex items-center">Job</div>
+                        <div className="p-2 flex-1 flex items-center">{dive.job?.job_name}</div>
+                    </div>
+                    <div className="flex p-0">
+                        <div className="w-32 bg-gray-100 p-2 font-bold border-r border-black flex items-center">Client</div>
+                        <div className="p-2 flex-1 flex items-center">{dive.job?.client_name}</div>
+                    </div>
+                </div>
 
-                <div className="border-b border-slate-200 pb-2"><span className="font-bold w-32 inline-block">Diver:</span> {dive.diver?.full_name} ({dive.diver?.rank})</div>
-                <div className="border-b border-slate-200 pb-2"><span className="font-bold w-32 inline-block">Supervisor:</span> {dive.supervisor?.full_name || 'N/A'}</div>
+                <div className="grid grid-cols-2 divide-x-2 divide-black border-b border-black">
+                    <div className="flex p-0">
+                        <div className="w-32 bg-gray-100 p-2 font-bold border-r border-black flex items-center">Location</div>
+                        <div className="p-2 flex-1 flex items-center">{dive.job?.location}</div>
+                    </div>
+                    <div className="flex p-0">
+                        <div className="w-32 bg-gray-100 p-2 font-bold border-r border-black flex items-center">Date</div>
+                        <div className="p-2 flex-1 flex items-center">{format(new Date(dive.date), 'dd MMM yyyy')}</div>
+                    </div>
+                </div>
 
-                <div className="border-b border-slate-200 pb-2"><span className="font-bold w-32 inline-block">Dive No:</span> {dive.dive_no || '---'}</div>
-                <div className="border-b border-slate-200 pb-2"><span className="font-bold w-32 inline-block">Max Depth:</span> {dive.max_depth || '---'} msw</div>
+                <div className="grid grid-cols-2 divide-x-2 divide-black border-b border-black">
+                    <div className="flex p-0">
+                        <div className="w-32 bg-gray-100 p-2 font-bold border-r border-black flex items-center">Diver</div>
+                        <div className="p-2 flex-1 flex items-center">{dive.diver?.full_name} ({dive.diver?.rank})</div>
+                    </div>
+                    <div className="flex p-0">
+                        <div className="w-32 bg-gray-100 p-2 font-bold border-r border-black flex items-center">Supervisor</div>
+                        <div className="p-2 flex-1 flex items-center">{dive.supervisor?.full_name || 'N/A'}</div>
+                    </div>
+                </div>
 
-                <div className="border-b border-slate-200 pb-2"><span className="font-bold w-32 inline-block">Start Time:</span> {dive.start_time?.slice(0, 5)}</div>
-                <div className="border-b border-slate-200 pb-2"><span className="font-bold w-32 inline-block">End Time:</span> {dive.end_time?.slice(0, 5)}</div>
-                <div className="border-b border-slate-200 pb-2"><span className="font-bold w-32 inline-block">Bottom Time:</span> {dive.bottom_time}</div>
+                <div className="grid grid-cols-2 divide-x-2 divide-black border-b border-black">
+                    <div className="flex p-0">
+                        <div className="w-32 bg-gray-100 p-2 font-bold border-r border-black flex items-center">Dive No</div>
+                        <div className="p-2 flex-1 flex items-center">{dive.dive_no || '---'}</div>
+                    </div>
+                    <div className="flex p-0">
+                        <div className="w-32 bg-gray-100 p-2 font-bold border-r border-black flex items-center">Max Depth</div>
+                        <div className="p-2 flex-1 flex items-center font-bold">{calculatedMaxDepth} msw</div>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-3 divide-x-2 divide-black border-b border-black">
+                    <div className="flex p-0">
+                        <div className="w-32 bg-gray-100 p-2 font-bold border-r border-black flex items-center">Start Time</div>
+                        <div className="p-2 flex-1 flex items-center">{dive.start_time?.slice(0, 5)}</div>
+                    </div>
+                    <div className="flex p-0">
+                        <div className="w-32 bg-gray-100 p-2 font-bold border-r border-black flex items-center">End Time</div>
+                        <div className="p-2 flex-1 flex items-center">{dive.end_time?.slice(0, 5)}</div>
+                    </div>
+                    <div className="flex p-0">
+                        <div className="w-32 bg-gray-100 p-2 font-bold border-r border-black flex items-center">Bottom Time</div>
+                        <div className="p-2 flex-1 flex items-center">{dive.bottom_time}</div>
+                    </div>
+                </div>
             </div>
 
             {/* Events Table */}
-            <div className="flex justify-between items-end border-b border-black mb-4 pb-1">
+            <div className="flex justify-between items-end mb-2">
                 <h3 className="font-bold text-lg uppercase">Time / Depth / Event Log</h3>
                 {isEditMode && (
                     <button onClick={() => startEdit(null)} className="text-sm bg-green-600 text-white px-3 py-1 rounded flex items-center hover:bg-green-700 print:hidden">
@@ -198,40 +269,57 @@ export default function DiveReport() {
                     </button>
                 )}
             </div>
-            <table className="w-full text-sm border-collapse">
-                <thead>
-                    <tr className="bg-slate-100 border-y border-black">
-                        <th className="py-2 px-4 text-left font-bold w-24">Time</th>
-                        <th className="py-2 px-4 text-left font-bold w-20">Depth</th>
-                        <th className="py-2 px-4 text-left font-bold">Event / Observation</th>
-                        {isEditMode && <th className="py-2 px-4 text-right font-bold w-24 print:hidden">Action</th>}
-                    </tr>
-                </thead>
-                <tbody>
-                    {events.map((event) => (
-                        <tr key={event.id} className={`border-b border-slate-200 ${isEditMode ? 'hover:bg-amber-50' : ''}`}>
-                            <td className="py-2 px-4 font-mono">{format(new Date(event.event_time), 'HH:mm')}</td>
-                            <td className="py-2 px-4 font-mono">{event.depth}m</td>
-                            <td className="py-2 px-4">
-                                <span className="font-bold mr-2">{event.event_type}</span>
-                                <span className="text-slate-700">{event.description}</span>
-                            </td>
-                            {isEditMode && (
-                                <td className="py-2 px-4 text-right print:hidden">
-                                    <div className="flex justify-end gap-2">
-                                        <button onClick={() => startEdit(event)} className="p-1 text-ocean-600 hover:bg-ocean-100 rounded">
-                                            <Pencil className="w-4 h-4" />
-                                        </button>
-                                        <button onClick={() => handleDeleteEvent(event.id)} className="p-1 text-red-600 hover:bg-red-100 rounded">
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
-                                    </div>
-                                </td>
-                            )}
+
+            <div className="border-2 border-black mb-8">
+                <table className="w-full text-sm border-collapse">
+                    <thead>
+                        <tr className="bg-gray-100 border-b-2 border-black">
+                            <th className="py-2 px-4 text-left font-bold w-32 border-r border-black">Time</th>
+                            <th className="py-2 px-4 text-left font-bold w-24 border-r border-black">Depth</th>
+                            <th className="py-2 px-4 text-left font-bold">Event / Observation</th>
+                            {isEditMode && <th className="py-2 px-4 text-right font-bold w-24 border-l border-black print:hidden">Action</th>}
                         </tr>
-                    ))}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        {events.map((event) => (
+                            <tr key={event.id} className={`border-b border-black/20 ${isEditMode ? 'hover:bg-amber-50' : 'even:bg-gray-50'}`}>
+                                <td className="py-2 px-4 font-mono border-r border-black/20">{format(new Date(event.event_time), 'HH:mm')}</td>
+                                <td className="py-2 px-4 font-mono border-r border-black/20">{event.depth}m</td>
+                                <td className="py-2 px-4">
+                                    <span className="font-bold mr-2">{event.event_type}</span>
+                                    {event.description && <span className="text-slate-700">- {event.description}</span>}
+                                </td>
+                                {isEditMode && (
+                                    <td className="py-2 px-4 text-right border-l border-black/20 print:hidden">
+                                        <div className="flex justify-end gap-2">
+                                            <button onClick={() => startEdit(event)} className="p-1 text-ocean-600 hover:bg-ocean-100 rounded">
+                                                <Pencil className="w-4 h-4" />
+                                            </button>
+                                            <button onClick={() => handleDeleteEvent(event.id)} className="p-1 text-red-600 hover:bg-red-100 rounded">
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    </td>
+                                )}
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+
+            {/* Signatures */}
+            <div className="grid grid-cols-2 gap-8 mt-12">
+                <div className="border-2 border-black p-4 h-40 flex flex-col justify-between">
+                    <p className="font-bold uppercase text-sm">Diver Signature</p>
+                    <div className="border-b-2 border-black w-full mb-2"></div>
+                    <p className="text-xs text-center">{dive.diver?.full_name}</p>
+                </div>
+                <div className="border-2 border-black p-4 h-40 flex flex-col justify-between">
+                    <p className="font-bold uppercase text-sm">Supervisor Signature</p>
+                    <div className="border-b-2 border-black w-full mb-2"></div>
+                    <p className="text-xs text-center">{dive.supervisor?.full_name || '________________'}</p>
+                </div>
+            </div>
 
             {/* Edit Modal */}
             {editingEvent && (
@@ -284,17 +372,6 @@ export default function DiveReport() {
                     </div>
                 </div>
             )}
-
-            <div className="mt-12 pt-8 border-t border-black flex justify-between text-sm">
-                <div>
-                    <p className="mb-8">Diver Signature:</p>
-                    <div className="w-48 border-b border-black"></div>
-                </div>
-                <div>
-                    <p className="mb-8">Supervisor Signature:</p>
-                    <div className="w-48 border-b border-black"></div>
-                </div>
-            </div>
         </div>
     );
 }

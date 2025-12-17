@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { Loader2, TrendingUp, Calendar, Anchor, Clock, ArrowRight } from 'lucide-react';
+import { Loader2, TrendingUp, Calendar, Anchor, Clock, ArrowRight, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
 
@@ -112,6 +112,19 @@ export default function Dashboard() {
         }
     }
 
+    async function handleDelete(id: string) {
+        if (!confirm('Are you sure you want to delete this dive log? This action cannot be undone.')) return;
+
+        try {
+            const { error } = await supabase.from('dives').delete().eq('id', id);
+            if (error) throw error;
+            fetchDashboardData();
+        } catch (error) {
+            console.error('Error deleting dive:', error);
+            alert('Failed to delete dive log');
+        }
+    }
+
     if (loading) {
         return <div className="flex justify-center p-20"><Loader2 className="w-10 h-10 text-ocean-400 animate-spin" /></div>;
     }
@@ -197,9 +210,18 @@ export default function Dashboard() {
                                                 </span>
                                             </td>
                                             <td className="p-4 text-right">
-                                                <Link to={`/reports/${dive.id}`} className="text-ocean-400 hover:text-white text-sm font-medium">
-                                                    View Report
-                                                </Link>
+                                                <div className="flex justify-end items-center space-x-4">
+                                                    <Link to={`/reports/${dive.id}`} className="text-ocean-400 hover:text-white text-sm font-medium">
+                                                        View Report
+                                                    </Link>
+                                                    <button
+                                                        onClick={() => handleDelete(dive.id)}
+                                                        className="text-red-500 hover:text-red-400 transition-colors"
+                                                        title="Delete Log"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))}
