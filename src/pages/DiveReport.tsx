@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import { Plus, Loader2, ArrowLeft, Printer, Pencil, Trash2, Save, X } from 'lucide-react';
-import { format, parse, set } from 'date-fns';
+import { Plus, Loader2, ArrowLeft, Printer, Pencil, Trash2, X } from 'lucide-react';
+import { format, set } from 'date-fns';
 
 interface DiveEvent {
     id: string;
@@ -14,7 +13,6 @@ interface DiveEvent {
 }
 
 export default function DiveReport() {
-    const { user } = useAuth();
     const { diveId } = useParams();
     const navigate = useNavigate();
     const [dive, setDive] = useState<any>(null);
@@ -210,7 +208,7 @@ export default function DiveReport() {
                     </tr>
                 </thead>
                 <tbody>
-                    {events.map((event, i) => (
+                    {events.map((event) => (
                         <tr key={event.id} className={`border-b border-slate-200 ${isEditMode ? 'hover:bg-amber-50' : ''}`}>
                             <td className="py-2 px-4 font-mono">{format(new Date(event.event_time), 'HH:mm')}</td>
                             <td className="py-2 px-4 font-mono">{event.depth}m</td>

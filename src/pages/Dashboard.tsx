@@ -61,7 +61,7 @@ export default function Dashboard() {
             if (todayError) throw todayError;
 
             // 3. Get Active Job Name (Most recent active one)
-            const { data: jobData, error: jobError } = await supabase
+            const { data: jobData } = await supabase
                 .from('jobs')
                 .select('job_name')
                 .eq('status', 'active')
@@ -92,7 +92,18 @@ export default function Dashboard() {
                 .limit(5);
 
             if (recentError) throw recentError;
-            setRecentDives(recent || []);
+            // Supabase returns arrays for joined relations, but we know it's 1:1 here.
+            // However, the typed response might say array. We can fix by casting or safe access.
+            // For now, let's cast as any to bypass the strict mismatch if the shape is correct at runtime.
+            // Better: update the interface to match what Supabase actually returns (arrays for joined tables usually imply array unless simple relation).
+            // Actually, `job:jobs(job_name)` usually returns an object if it's a single join, or array.
+            // Let's assume the error says: Property 'job_name' is missing in type '{ job_name: any; }[]'.
+            // This means TS thinks it's an array.
+            setRecentDives((recent as any)?.map((d: any) => ({
+                ...d,
+                job: Array.isArray(d.job) ? d.job[0] : d.job,
+                diver: Array.isArray(d.diver) ? d.diver[0] : d.diver
+            })) || []);
 
         } catch (error) {
             console.error('Error fetching dashboard data:', error);
