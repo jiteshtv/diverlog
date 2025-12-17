@@ -162,25 +162,28 @@ export default function DiveReport() {
         }
     };
 
-    const handleShare = async () => {
+    const handleShare = () => {
         if (!dive) return;
-        const shareData = {
-            title: `Dive Log #${dive.dive_no} - ${dive.job?.job_name}`,
-            text: `Check out my dive log for ${dive.job?.job_name} on ${format(new Date(dive.date), 'dd MMM yyyy')}.`,
-            url: window.location.href
-        };
 
-        if (navigator.share) {
-            try {
-                await navigator.share(shareData);
-            } catch (err) {
-                console.error('Share failed:', err);
-            }
-        } else {
-            // Fallback: Copy to clipboard or show modal
-            navigator.clipboard.writeText(window.location.href);
-            alert('Link copied to clipboard!');
-        }
+        // Calculate max depth before using it
+        const maxDepth = dive?.max_depth || (events.length > 0 ? Math.max(...events.map(e => e.depth)) : 0);
+
+        // Create a detailed text summary of the dive for WhatsApp
+        const shareText = `🤿 *DIVE LOG REPORT*\n\n` +
+            `*Dive #${dive.dive_no}*\n` +
+            `📅 Date: ${format(new Date(dive.date), 'dd MMM yyyy')}\n` +
+            `🏢 Job: ${dive.job?.job_name}\n` +
+            `🏭 Client: ${dive.job?.client_name}\n` +
+            `📍 Location: ${dive.job?.location}\n` +
+            `👤 Diver: ${dive.diver?.full_name} (${dive.diver?.rank})\n` +
+            `👨‍✈️ Supervisor: ${dive.supervisor?.full_name || 'N/A'}\n` +
+            `⏱️ Start: ${dive.start_time?.slice(0, 5)} | End: ${dive.end_time?.slice(0, 5)}\n` +
+            `📊 Max Depth: ${maxDepth}m\n` +
+            `⏳ Bottom Time: ${dive.bottom_time}`;
+
+        // Open WhatsApp with the share text
+        const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
+        window.open(whatsappUrl, '_blank');
     };
 
     if (loading) return <div className="p-12 flex justify-center"><Loader2 className="animate-spin text-ocean-400" /></div>;
