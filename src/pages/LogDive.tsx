@@ -249,12 +249,12 @@ export default function LogDive() {
     );
 
     return (
-        <div className="flex flex-col gap-4 h-[calc(100vh-100px)]">
+        <div className="flex flex-col gap-4 lg:h-[calc(100vh-100px)] h-auto">
             {/* Top Bar: Session Setup */}
-            <div className="bg-deep-800 border border-ocean-700/50 rounded-xl p-4 shadow-md flex flex-wrap gap-4 items-center justify-between">
-                <div className="flex items-center gap-4 flex-1">
+            <div className="bg-deep-800 border border-ocean-700/50 rounded-xl p-4 shadow-md flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+                <div className="flex flex-col md:flex-row items-stretch md:items-center gap-4 flex-1 w-full">
                     <div className="flex items-center gap-2">
-                        <Briefcase className="w-5 h-5 text-ocean-400" />
+                        <Briefcase className="w-5 h-5 text-ocean-400 shrink-0" />
                         <span className="font-bold text-white text-sm whitespace-nowrap">Active Job:</span>
                     </div>
                     <select
@@ -270,7 +270,7 @@ export default function LogDive() {
                     <div className="w-px h-8 bg-ocean-800 mx-2 hidden md:block"></div>
 
                     <div className="flex items-center gap-2">
-                        <User className="w-5 h-5 text-ocean-400" />
+                        <User className="w-5 h-5 text-ocean-400 shrink-0" />
                         <span className="font-bold text-white text-sm whitespace-nowrap">Diver:</span>
                     </div>
                     <select

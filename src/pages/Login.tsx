@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, Mail, Lock, CheckCircle2, AlertTriangle, ArrowLeft } from 'lucide-react';
+import { Loader2, Mail, Lock, CheckCircle2, AlertTriangle, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 
 type AuthMode = 'login' | 'signup' | 'forgot';
 
@@ -9,6 +9,7 @@ export default function Login() {
     const [mode, setMode] = useState<AuthMode>('login');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const navigate = useNavigate();
@@ -149,12 +150,19 @@ export default function Login() {
                             <div className="relative">
                                 <Lock className="absolute left-3 top-3 w-5 h-5 text-ocean-400" />
                                 <input
-                                    type="password"
+                                    type={showPassword ? "text" : "password"}
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="w-full bg-deep-800/50 border border-ocean-700/50 rounded-lg pl-10 pr-4 py-3 text-white placeholder-ocean-400/50 focus:outline-none focus:ring-2 focus:ring-ocean-500 transition-all"
+                                    className="w-full bg-deep-800/50 border border-ocean-700/50 rounded-lg pl-10 pr-10 py-3 text-white placeholder-ocean-400/50 focus:outline-none focus:ring-2 focus:ring-ocean-500 transition-all"
                                     placeholder="••••••••"
                                 />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-3 top-3 text-ocean-400 hover:text-white transition-colors"
+                                >
+                                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                </button>
                             </div>
                         </div>
                     )}
