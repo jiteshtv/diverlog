@@ -1,0 +1,9 @@
+Diver log supabase Database 
+
+Password: VB0sZ5ubEbBsXCzp
+
+postgresql://postgres.sqrghrexhmtyfbmoblob:VB0sZ5ubEbBsXCzp@aws-1-ap-southeast-1.pooler.supabase.com:5432/postgres
+
+
+Project URL : https://sqrghrexhmtyfbmoblob.supabase.co
+anon public Key : eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNxcmdocmV4aG10eWZibW9ibG9iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU5MzUyNTMsImV4cCI6MjA4MTUxMTI1M30.OoKo2We8a8OpIoFZN2BoxBOaYxs_C362hYkhH4Qjh3w 
