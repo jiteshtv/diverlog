@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { Link } from 'react-router-dom';
-import { Play, Square, Save, Clock, ArrowDown, ArrowUp, Briefcase, AlertTriangle, CheckCircle2, History, ExternalLink, User, CalendarPlus } from 'lucide-react';
+import { Play, Square, Save, Clock, ArrowDown, ArrowUp, Briefcase, AlertTriangle, CheckCircle2, History, ExternalLink, User, CalendarPlus, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface Job { id: string; job_name: string; }
@@ -99,6 +99,19 @@ export default function LogDive() {
 
         if (error) console.error('Error fetching history:', error);
         else setJobHistory((data as any) || []);
+    }
+
+    async function handleDeleteDive(id: string) {
+        if (!confirm('Are you sure you want to delete this dive log? This action cannot be undone.')) return;
+        try {
+            await supabase.from('dive_events').delete().eq('dive_id', id);
+            const { error } = await supabase.from('dives').delete().eq('id', id);
+            if (error) throw error;
+            if (selectedJob) fetchJobHistory(selectedJob);
+        } catch (error) {
+            console.error('Error deleting dive:', error);
+            alert('Failed to delete dive log');
+        }
     }
 
     async function startDive() {
@@ -398,12 +411,20 @@ export default function LogDive() {
                                             <div className="font-bold text-white text-sm">Dive #{dive.dive_no}</div>
                                             <div className="text-xs text-ocean-300">{format(new Date(dive.date), 'dd MMM yyyy')}</div>
                                         </div>
-                                        <Link
-                                            to={`/reports/${dive.id}`}
-                                            className="text-xs bg-ocean-900 text-ocean-400 px-2 py-1 rounded border border-ocean-800 hover:text-white hover:border-ocean-500 flex items-center transition-colors"
-                                        >
-                                            View / Edit <ExternalLink className="w-3 h-3 ml-1" />
-                                        </Link>
+                                        <div className="flex gap-1">
+                                            <Link
+                                                to={`/reports/${dive.id}`}
+                                                className="text-xs bg-ocean-900 text-ocean-400 px-2 py-1 rounded border border-ocean-800 hover:text-white hover:border-ocean-500 flex items-center transition-colors"
+                                            >
+                                                View / Edit <ExternalLink className="w-3 h-3 ml-1" />
+                                            </Link>
+                                            <button
+                                                onClick={() => handleDeleteDive(dive.id)}
+                                                className="text-xs bg-red-900/30 text-red-500 px-2 py-1 rounded border border-red-900 hover:bg-red-800 hover:text-white transition-colors"
+                                            >
+                                                <Trash2 className="w-3 h-3" />
+                                            </button>
+                                        </div>
                                     </div>
                                     <div className="flex justify-between items-center text-xs">
                                         <span className="text-slate-400">{dive.diver?.full_name}</span>
@@ -419,93 +440,95 @@ export default function LogDive() {
             </div>
 
             {/* Manual Entry Modal */}
-            {showManualLog && (
-                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-                    <div className="bg-deep-800 border border-ocean-700 p-6 rounded-xl w-full max-w-sm shadow-2xl">
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="font-bold text-lg text-white">Add Missed Entry</h3>
-                            <button onClick={() => setShowManualLog(false)}><span className="text-slate-400 hover:text-white">✕</span></button>
+            {
+                showManualLog && (
+                    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+                        <div className="bg-deep-800 border border-ocean-700 p-6 rounded-xl w-full max-w-sm shadow-2xl">
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="font-bold text-lg text-white">Add Missed Entry</h3>
+                                <button onClick={() => setShowManualLog(false)}><span className="text-slate-400 hover:text-white">✕</span></button>
+                            </div>
+                            <form onSubmit={async (e) => {
+                                e.preventDefault();
+                                if (!manualEntryData.type) return;
+
+                                // Calculate timestamp
+                                const [h, m] = manualEntryData.time.split(':');
+                                const now = new Date();
+                                const eventTime = new Date(now.setHours(parseInt(h), parseInt(m), 0)).toISOString();
+
+                                // Log event
+                                await logEvent(activeDiveId!, manualEntryData.type, manualEntryData.desc, eventTime, parseFloat(manualEntryData.depth));
+
+                                // Handle Dive Completion
+                                if (manualEntryData.closeDive) {
+                                    await completeDiveManually(eventTime);
+                                }
+
+                                setShowManualLog(false);
+                                setManualEntryData({ time: format(new Date(), 'HH:mm'), depth: currentDepth.toString(), type: '', desc: '', closeDive: false });
+                            }} className="space-y-4">
+                                <div>
+                                    <label className="block text-xs font-bold text-ocean-300 uppercase mb-1">Time (HH:MM)</label>
+                                    <input
+                                        type="time"
+                                        className="w-full bg-black border border-ocean-700 rounded p-2 text-white"
+                                        value={manualEntryData.time}
+                                        onChange={e => setManualEntryData({ ...manualEntryData, time: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-ocean-300 uppercase mb-1">Depth (m)</label>
+                                    <input
+                                        type="number"
+                                        className="w-full bg-black border border-ocean-700 rounded p-2 text-white"
+                                        value={manualEntryData.depth}
+                                        onChange={e => setManualEntryData({ ...manualEntryData, depth: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-ocean-300 uppercase mb-1">Event Type</label>
+                                    <input
+                                        type="text"
+                                        className="w-full bg-black border border-ocean-700 rounded p-2 text-white"
+                                        value={manualEntryData.type}
+                                        onChange={e => setManualEntryData({ ...manualEntryData, type: e.target.value })}
+                                        placeholder="e.g. Dive Ended"
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-ocean-300 uppercase mb-1">Description</label>
+                                    <textarea
+                                        className="w-full bg-black border border-ocean-700 rounded p-2 text-white h-20"
+                                        value={manualEntryData.desc}
+                                        onChange={e => setManualEntryData({ ...manualEntryData, desc: e.target.value })}
+                                    />
+                                </div>
+
+                                <div className="flex items-center space-x-2 bg-red-900/20 p-3 rounded border border-red-500/30">
+                                    <input
+                                        type="checkbox"
+                                        id="closeDive"
+                                        checked={manualEntryData.closeDive}
+                                        onChange={e => setManualEntryData({ ...manualEntryData, closeDive: e.target.checked })}
+                                        className="w-4 h-4 rounded text-red-600 focus:ring-red-500"
+                                    />
+                                    <label htmlFor="closeDive" className="text-sm text-red-200 font-bold cursor-pointer">
+                                        End Log & Complete Dive?
+                                    </label>
+                                </div>
+
+                                <button type="submit" className={`w-full font-bold py-3 rounded-lg transition-colors ${manualEntryData.closeDive ? 'bg-red-600 hover:bg-red-500 text-white' : 'bg-ocean-600 hover:bg-ocean-700 text-white'}`}>
+                                    {manualEntryData.closeDive ? 'Add Entry & Finish Dive' : 'Add Entry'}
+                                </button>
+                            </form>
                         </div>
-                        <form onSubmit={async (e) => {
-                            e.preventDefault();
-                            if (!manualEntryData.type) return;
-
-                            // Calculate timestamp
-                            const [h, m] = manualEntryData.time.split(':');
-                            const now = new Date();
-                            const eventTime = new Date(now.setHours(parseInt(h), parseInt(m), 0)).toISOString();
-
-                            // Log event
-                            await logEvent(activeDiveId!, manualEntryData.type, manualEntryData.desc, eventTime, parseFloat(manualEntryData.depth));
-
-                            // Handle Dive Completion
-                            if (manualEntryData.closeDive) {
-                                await completeDiveManually(eventTime);
-                            }
-
-                            setShowManualLog(false);
-                            setManualEntryData({ time: format(new Date(), 'HH:mm'), depth: currentDepth.toString(), type: '', desc: '', closeDive: false });
-                        }} className="space-y-4">
-                            <div>
-                                <label className="block text-xs font-bold text-ocean-300 uppercase mb-1">Time (HH:MM)</label>
-                                <input
-                                    type="time"
-                                    className="w-full bg-black border border-ocean-700 rounded p-2 text-white"
-                                    value={manualEntryData.time}
-                                    onChange={e => setManualEntryData({ ...manualEntryData, time: e.target.value })}
-                                    required
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-bold text-ocean-300 uppercase mb-1">Depth (m)</label>
-                                <input
-                                    type="number"
-                                    className="w-full bg-black border border-ocean-700 rounded p-2 text-white"
-                                    value={manualEntryData.depth}
-                                    onChange={e => setManualEntryData({ ...manualEntryData, depth: e.target.value })}
-                                    required
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-bold text-ocean-300 uppercase mb-1">Event Type</label>
-                                <input
-                                    type="text"
-                                    className="w-full bg-black border border-ocean-700 rounded p-2 text-white"
-                                    value={manualEntryData.type}
-                                    onChange={e => setManualEntryData({ ...manualEntryData, type: e.target.value })}
-                                    placeholder="e.g. Dive Ended"
-                                    required
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-bold text-ocean-300 uppercase mb-1">Description</label>
-                                <textarea
-                                    className="w-full bg-black border border-ocean-700 rounded p-2 text-white h-20"
-                                    value={manualEntryData.desc}
-                                    onChange={e => setManualEntryData({ ...manualEntryData, desc: e.target.value })}
-                                />
-                            </div>
-
-                            <div className="flex items-center space-x-2 bg-red-900/20 p-3 rounded border border-red-500/30">
-                                <input
-                                    type="checkbox"
-                                    id="closeDive"
-                                    checked={manualEntryData.closeDive}
-                                    onChange={e => setManualEntryData({ ...manualEntryData, closeDive: e.target.checked })}
-                                    className="w-4 h-4 rounded text-red-600 focus:ring-red-500"
-                                />
-                                <label htmlFor="closeDive" className="text-sm text-red-200 font-bold cursor-pointer">
-                                    End Log & Complete Dive?
-                                </label>
-                            </div>
-
-                            <button type="submit" className={`w-full font-bold py-3 rounded-lg transition-colors ${manualEntryData.closeDive ? 'bg-red-600 hover:bg-red-500 text-white' : 'bg-ocean-600 hover:bg-ocean-700 text-white'}`}>
-                                {manualEntryData.closeDive ? 'Add Entry & Finish Dive' : 'Add Entry'}
-                            </button>
-                        </form>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
 }

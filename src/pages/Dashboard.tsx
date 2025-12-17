@@ -116,6 +116,11 @@ export default function Dashboard() {
         if (!confirm('Are you sure you want to delete this dive log? This action cannot be undone.')) return;
 
         try {
+            // 1. Delete associated events first (to handle FK constraints if cascade is missing)
+            const { error: eventError } = await supabase.from('dive_events').delete().eq('dive_id', id);
+            if (eventError) console.warn('Error deleting events:', eventError);
+
+            // 2. Delete the dive log
             const { error } = await supabase.from('dives').delete().eq('id', id);
             if (error) throw error;
             fetchDashboardData();
