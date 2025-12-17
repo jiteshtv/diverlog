@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { Plus, Loader2, ArrowLeft, Printer, Pencil, Trash2, X, Share2, Mail, Download } from 'lucide-react';
+import { Plus, Loader2, ArrowLeft, Printer, Pencil, Trash2, X, Share2 } from 'lucide-react';
 import { format, set } from 'date-fns';
 
 interface DiveEvent {
@@ -452,5 +452,7 @@ export default function DiveReport() {
                     </div>
                 )}
             </div>
-            );
+            {/* End A4 Paper Container */}
+        </div>
+    );
 }
