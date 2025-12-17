@@ -41,7 +41,12 @@ export default function Login() {
                 const { error, data } = await supabase.auth.signUp({
                     email,
                     password,
-                    options: { emailRedirectTo: window.location.origin },
+                    options: {
+                        emailRedirectTo: window.location.origin,
+                        data: {
+                            email_confirmed: true // Skip email verification for development
+                        }
+                    },
                 });
                 if (error) throw error;
 
@@ -49,7 +54,7 @@ export default function Login() {
                 if (data.user && data.user.identities && data.user.identities.length === 0) {
                     setMessage({ type: 'error', text: 'User already exists. Please login.' });
                 } else {
-                    setMessage({ type: 'success', text: 'Registration successful! Please login.' });
+                    setMessage({ type: 'success', text: 'Registration successful! You can now login.' });
                     setMode('login'); // Switch to login view for convenience
                     setPassword(''); // Clear password
                 }
