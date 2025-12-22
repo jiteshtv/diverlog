@@ -39,7 +39,7 @@ export default function Login() {
         try {
             if (mode === 'signup') {
                 const { error, data } = await supabase.auth.signUp({
-                    email,
+                    email: email.trim(),
                     password,
                     options: {
                         emailRedirectTo: window.location.origin,
@@ -61,21 +61,23 @@ export default function Login() {
             }
             else if (mode === 'login') {
                 const { error } = await supabase.auth.signInWithPassword({
-                    email,
+                    email: email.trim(),
                     password,
                 });
                 if (error) throw error;
+                // Navigation handled by onAuthStateChange or just here
                 navigate('/');
             }
             else if (mode === 'forgot') {
-                const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
                     redirectTo: `${window.location.origin}/update-password`,
                 });
                 if (error) throw error;
                 setMessage({ type: 'success', text: 'Password reset link sent to your email.' });
             }
         } catch (error: any) {
-            setMessage({ type: 'error', text: error.message || 'Authentication failed' });
+            console.error("Auth error:", error);
+            setMessage({ type: 'error', text: error.message || 'Authentication failed. Please check your credentials.' });
         } finally {
             setLoading(false);
         }
